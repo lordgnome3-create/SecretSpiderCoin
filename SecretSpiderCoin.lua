@@ -63,12 +63,6 @@ close:SetPoint("TOPRIGHT", -5, -5)
 -----------------------------------
 local selectedPlayer = nil
 
--- Create dropdown frame properly for vanilla
-local dropdown = CreateFrame("Frame", "SSC_PlayerDropdown", frame)
-dropdown:SetPoint("TOPLEFT", 20, -50)
-dropdown:SetWidth(200)
-dropdown:SetHeight(32)
-
 local function GetPlayerList()
     local list = {}
 
@@ -105,25 +99,27 @@ local function GetPlayerList()
     return list
 end
 
--- Initialize dropdown with proper vanilla syntax
-UIDropDownMenu_Initialize(dropdown, function()
+-- Create dropdown the proper vanilla way
+local dropdown = CreateFrame("Frame", "SSC_PlayerDropdown", frame)
+dropdown:SetPoint("TOPLEFT", 20, -50)
+
+UIDropDownMenu_Initialize(dropdown, function(self, level)
     local players = GetPlayerList()
     for i = 1, table.getn(players) do
-        local info = UIDropDownMenu_CreateInfo()
+        local info = {}
         info.text = players[i]
+        info.value = players[i]
         info.func = function()
             selectedPlayer = this.value
             UIDropDownMenu_SetSelectedValue(dropdown, this.value)
         end
-        info.value = players[i]
-        UIDropDownMenu_AddButton(info)
+        UIDropDownMenu_AddButton(info, level)
     end
 end)
 
-UIDropDownMenu_SetWidth(160, dropdown)
-UIDropDownMenu_SetButtonWidth(160, dropdown)
-UIDropDownMenu_SetText("Select Player", dropdown)
-UIDropDownMenu_JustifyText("LEFT", dropdown)
+UIDropDownMenu_SetSelectedValue(dropdown, nil)
+UIDropDownMenu_SetWidth(dropdown, 160)
+UIDropDownMenu_SetText(dropdown, "Select Player")
 
 -----------------------------------
 -- Amount Box
@@ -181,27 +177,24 @@ local chatTarget = "GUILD"
 
 local chatDrop = CreateFrame("Frame", "SSC_ChatDropdown", frame)
 chatDrop:SetPoint("TOPLEFT", addBtn, "BOTTOMLEFT", -15, -20)
-chatDrop:SetWidth(150)
-chatDrop:SetHeight(32)
 
-UIDropDownMenu_Initialize(chatDrop, function()
+UIDropDownMenu_Initialize(chatDrop, function(self, level)
     local channels = { "GUILD", "PARTY", "RAID" }
     for i = 1, table.getn(channels) do
-        local info = UIDropDownMenu_CreateInfo()
+        local info = {}
         info.text = channels[i]
+        info.value = channels[i]
         info.func = function()
             chatTarget = this.value
             UIDropDownMenu_SetSelectedValue(chatDrop, this.value)
         end
-        info.value = channels[i]
-        UIDropDownMenu_AddButton(info)
+        UIDropDownMenu_AddButton(info, level)
     end
 end)
 
-UIDropDownMenu_SetWidth(100, chatDrop)
-UIDropDownMenu_SetButtonWidth(100, chatDrop)
-UIDropDownMenu_SetText("GUILD", chatDrop)
 UIDropDownMenu_SetSelectedValue(chatDrop, "GUILD")
+UIDropDownMenu_SetWidth(chatDrop, 100)
+UIDropDownMenu_SetText(chatDrop, "GUILD")
 
 -----------------------------------
 -- Top 10 Button
