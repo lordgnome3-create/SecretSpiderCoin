@@ -223,10 +223,17 @@ end
 local function UpdateTop15()
     local list = {}
     for name, coins in pairs(SecretSpiderCoin.coins) do
-        table.insert(list, {name=name, coins=coins})
+        if type(coins) == "number" then
+            table.insert(list, {name=name, coins=coins})
+        end
     end
     
-    table.sort(list, function(a,b) return a.coins > b.coins end)
+    table.sort(list, function(a,b) 
+        if type(a.coins) == "number" and type(b.coins) == "number" then
+            return a.coins > b.coins
+        end
+        return false
+    end)
     
     for i = 1, 15 do
         if i <= table.getn(list) then
@@ -327,10 +334,17 @@ topBtn:SetText("Say Top 10")
 topBtn:SetScript("OnClick", function()
     local list = {}
     for name, coins in pairs(SecretSpiderCoin.coins) do
-        table.insert(list, {name=name, coins=coins})
+        if type(coins) == "number" then
+            table.insert(list, {name=name, coins=coins})
+        end
     end
 
-    table.sort(list, function(a,b) return a.coins > b.coins end)
+    table.sort(list, function(a,b) 
+        if type(a.coins) == "number" and type(b.coins) == "number" then
+            return a.coins > b.coins
+        end
+        return false
+    end)
 
     SendChatMessage("Top Secret Spider Coin Holders:", chatTarget)
 
