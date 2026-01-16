@@ -63,7 +63,7 @@ close:SetPoint("TOPRIGHT", -5, -5)
 -----------------------------------
 local selectedPlayer = nil
 
-local dropdown = CreateFrame("Frame", "SSC_PlayerDropdown", frame, "UIDropDownMenuTemplate")
+local dropdown = CreateFrame("Button", "SSC_PlayerDropdown", frame)
 dropdown:SetPoint("TOPLEFT", 20, -50)
 
 local function GetPlayerList()
@@ -102,26 +102,21 @@ local function GetPlayerList()
     return list
 end
 
-
-
-
-
-
 UIDropDownMenu_Initialize(dropdown, function()
     local players = GetPlayerList()
-    for i = 1, getn(players) do
-        UIDropDownMenu_AddButton({
-            text = players[i],
-            func = function()
-                selectedPlayer = players[i]
-                UIDropDownMenu_SetSelectedName(dropdown, players[i])
-            end
-        })
+    for i = 1, table.getn(players) do
+        local info = {}
+        info.text = players[i]
+        info.func = function()
+            selectedPlayer = players[i]
+            UIDropDownMenu_SetSelectedName(dropdown, players[i])
+        end
+        UIDropDownMenu_AddButton(info)
     end
 end)
 
-UIDropDownMenu_SetWidth(dropdown, 160)
-UIDropDownMenu_SetText(dropdown, "Select Player")
+UIDropDownMenu_SetWidth(160, dropdown)
+UIDropDownMenu_SetText("Select Player", dropdown)
 
 -----------------------------------
 -- Amount Box
@@ -177,24 +172,24 @@ end)
 -----------------------------------
 local chatTarget = "GUILD"
 
-local chatDrop = CreateFrame("Frame", "SSC_ChatDropdown", frame, "UIDropDownMenuTemplate")
+local chatDrop = CreateFrame("Button", "SSC_ChatDropdown", frame)
 chatDrop:SetPoint("TOPLEFT", addBtn, "BOTTOMLEFT", -15, -20)
 
 UIDropDownMenu_Initialize(chatDrop, function()
     local channels = { "GUILD", "PARTY", "RAID" }
-    for i = 1, getn(channels) do
-        UIDropDownMenu_AddButton({
-            text = channels[i],
-            func = function()
-                chatTarget = channels[i]
-                UIDropDownMenu_SetSelectedName(chatDrop, channels[i])
-            end
-        })
+    for i = 1, table.getn(channels) do
+        local info = {}
+        info.text = channels[i]
+        info.func = function()
+            chatTarget = channels[i]
+            UIDropDownMenu_SetSelectedName(chatDrop, channels[i])
+        end
+        UIDropDownMenu_AddButton(info)
     end
 end)
 
-UIDropDownMenu_SetWidth(chatDrop, 100)
-UIDropDownMenu_SetText(chatDrop, "Chat")
+UIDropDownMenu_SetWidth(100, chatDrop)
+UIDropDownMenu_SetText("Chat", chatDrop)
 
 -----------------------------------
 -- Top 10 Button
@@ -216,7 +211,7 @@ topBtn:SetScript("OnClick", function()
     SendChatMessage("Top Secret Spider Coin Holders:", chatTarget)
 
     local maxEntries = 10
-    if getn(list) < 10 then maxEntries = getn(list) end
+    if table.getn(list) < 10 then maxEntries = table.getn(list) end
 
     for i = 1, maxEntries do
         SendChatMessage(i..". "..list[i].name.." - "..list[i].coins, chatTarget)
