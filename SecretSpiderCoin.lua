@@ -1,5 +1,5 @@
 -- ==================================================
--- Secret Spider Coin v6.5 (Turtle WoW / Vanilla)
+-- Secret Spider Coin v6.6 (Turtle WoW / Vanilla)
 -- ==================================================
 
 SSC_PREFIX = "SSC"
@@ -146,18 +146,13 @@ SSC_Frame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 12, top = 12, bottom = 11 }
 })
-SSC_Frame:SetMovable(true)
 SSC_Frame:EnableMouse(true)
+SSC_Frame:SetMovable(true)
 SSC_Frame:SetUserPlaced(true)
 SSC_Frame:RegisterForDrag("LeftButton")
-SSC_Frame:SetScript("OnDragStart", function(frame, button)
-    if button == "LeftButton" then
-        frame:StartMoving()
-    end
-end)
-SSC_Frame:SetScript("OnDragStop", function(frame)
-    frame:StopMovingOrSizing()
-end)
+-- Dragging safe for Vanilla/Turtle WoW
+SSC_Frame:SetScript("OnDragStart", function() SSC_Frame:StartMoving() end)
+SSC_Frame:SetScript("OnDragStop", function() SSC_Frame:StopMovingOrSizing() end)
 SSC_Frame:Hide()
 
 -- Title
