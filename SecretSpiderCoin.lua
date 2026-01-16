@@ -125,16 +125,18 @@ for i = 1, 10 do
     btn:SetWidth(180)
     btn:SetHeight(20)
     btn:SetPoint("TOPLEFT", 10, -10 - (i-1)*20)
-    btn:SetNormalFontObject("GameFontHighlight")
-    btn:SetText("")
-    btn:Hide()
+    
+    local btnText = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    btnText:SetPoint("LEFT", 5, 0)
+    btn.text = btnText
     
     btn:SetScript("OnClick", function()
-        selectedPlayer = this:GetText()
+        selectedPlayer = this.text:GetText()
         playerText:SetText(selectedPlayer)
         playerListFrame:Hide()
     end)
     
+    btn:Hide()
     playerButtons[i] = btn
 end
 
@@ -151,7 +153,7 @@ selectPlayerBtn:SetScript("OnClick", function()
         local players = GetPlayerList()
         for i = 1, 10 do
             if i <= table.getn(players) then
-                playerButtons[i]:SetText(players[i])
+                playerButtons[i].text:SetText(players[i])
                 playerButtons[i]:Show()
             else
                 playerButtons[i]:Hide()
