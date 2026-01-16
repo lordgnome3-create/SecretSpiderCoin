@@ -1,5 +1,5 @@
 -- ==================================================
--- Secret Spider Coin v6.1 (Turtle WoW / Vanilla)
+-- Secret Spider Coin v6.2 (Turtle WoW / Vanilla)
 -- ==================================================
 
 SSC_PREFIX = "SSC"
@@ -73,6 +73,9 @@ local function AddCoins(name, amount)
     SecretSpiderCoinDB.balances[name] = new
     Log(Player() .. " changed " .. name .. " by " .. amount)
     Broadcast("SET|" .. name .. "|" .. new)
+    -- Feedback message
+    local action = amount > 0 and "added" or "removed"
+    print("|cff00ff00[SSC]|r " .. math.abs(amount) .. " coins " .. action .. " for " .. name .. ". New balance: " .. new)
 end
 
 -- ======================
@@ -98,7 +101,6 @@ local function AnnounceTop10(channel)
         SendChatMessage(i .. ". " .. list[i].n .. " - " .. list[i].a, channel)
     end
 end
-
 
 -- ======================
 -- Group Member List (nil-safe)
