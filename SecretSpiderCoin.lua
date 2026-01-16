@@ -1,155 +1,180 @@
 -- =====================================
--- Secret Spider Coin - Turtle WoW (1.12.1)
+-- Secret Spider Coin (Turtle WoW)
 -- =====================================
 
--- Initialize SavedVariables
+SECRETSPIDER_PREFIX = "SSC"
+
+-- SavedVariables
 if not SecretSpiderCoinDB then
     SecretSpiderCoinDB = {
         balances = {},
-        distributors = {}
+        distributors = {},
+        guildMaster = nil
     }
 end
 
--- =====================================
--- Utility Functions
--- =====================================
+-- ==============================
+-- Utilities
+-- ==============================
 
-local function PlayerName()
+local function Player()
     return UnitName("player")
 end
 
--- Vanilla-safe Guild Master check
 local function IsGuildMaster()
     if not IsInGuild() then return false end
-    local name, rank, rankIndex = GetGuildInfo("player")
+    local _, _, rankIndex = GetGuildInfo("player")
     return rankIndex == 0
 end
 
-local function IsDistributor()
-    return IsGuildMaster() or SecretSpiderCoinDB.distributors[PlayerName()]
+local function IsAuthorized()
+    return Player() == SecretSpiderCoinDB.guildMaster
+        or SecretSpiderCoinDB.distributors[Player()]
 end
 
-local function AddCoins(player, amount)
-    SecretSpiderCoinDB.balances[player] =
-        (SecretSpiderCoinDB.balances[player] or 0) + amount
-end
-
-local function GetBalance(player)
-    return SecretSpiderCoinDB.balances[player] or 0
-end
-
--- =====================================
--- Popup Menu
--- =====================================
-
-StaticPopupDialogs["SECRETSPIDER_COIN_MENU"] = {
-    text = "Secret Spider Coin Menu",
-    button1 = "OK",
-    timeout = 0,
-    whileDead = 1,
-    hideOnEscape = 1,
-    OnAccept = function()
-        print("|cff00ff00Secret Spider Coin Commands:|r")
-        print("/ssc menu")
-        print("/ssc give <player> <amount>")
-        print("/ssc balance [player]")
-        print("/ssc authorize <player>  (Guild Master)")
-        print("/ssc revoke <player>     (Guild Master)")
+-- Lock guild master permanently
+local function InitializeGuildMaster()
+    if not SecretSpiderCoinDB.guildMaster and IsGuildMaster() then
+        SecretSpiderCoinDB.guildMaster = Player()
+        print("|cff00ff00Secret Spider Coin: Guild Master locked to|r", Player())
     end
+end
+
+-- ==============================
+-- Communication
+-- ==============================
+
+local function Broadcast(msg)
+    if IsInGuild() then
+        SendAddonMessage(SECRETSPIDER_PREFIX, msg, "GUILD")
+    end
+end
+
+-- ==============================
+-- Coin Logic
+-- ==============================
+
+local function SetCoins(name, amount)
+    SecretSpiderCoinDB.balances[name] = amount
+end
+
+local function AddCoins(name, amount)
+    SetCoins(name, (SecretSpiderCoinDB.balances[name] or 0) + amount)
+end
+
+-- ==============================
+-- Announce Balance
+-- ==============================
+
+local function AnnounceBalance(target, channel)
+    local amount = SecretSpiderCoinDB.balances[target] or 0
+    SendChatMessage(
+        target .. " has " .. amount .. " Secret Spider Coins",
+        channel
+    )
+end
+
+-- ==============================
+-- Top 10
+-- ==============================
+
+local function AnnounceTop10(channel)
+    local list = {}
+    for name, amount in pairs(SecretSpiderCoinDB.balances) do
+        table.insert(list, {name=name, amount=amount})
+    end
+
+    table.sort(list, function(a,b) return a.amount > b.amount end)
+
+    SendChatMessage("Top 10 Secret Spider Coins:", channel)
+    for i = 1, math.min(10, getn(list)) do
+        SendChatMessage(
+            i .. ". " .. list[i].name .. " - " .. list[i].amount,
+            channel
+        )
+    end
+end
+
+-- ==============================
+-- Right Click Menu Injection
+-- ==============================
+
+UnitPopupButtons["SECRETSPIDER"] = {
+    text = "Secret Spider Coin",
+    dist = 0
 }
 
--- =====================================
+UnitPopupMenus["PLAYER"] = UnitPopupMenus["PLAYER"] or {}
+table.insert(UnitPopupMenus["PLAYER"], "SECRETSPIDER")
+
+hooksecurefunc("UnitPopup_OnClick", function(self)
+    if self.value ~= "SECRETSPIDER" then return end
+    local target = UnitName("target")
+    if not target then return end
+
+    StaticPopupDialogs["SSC_PLAYER_MENU"] = {
+        text = "Secret Spider Coin: " .. target,
+        button1 = "Add 10",
+        button2 = "Remove 10",
+        button3 = "Announce",
+        timeout = 0,
+        whileDead = 1,
+        hideOnEscape = 1,
+
+        OnAccept = function()
+            if not IsAuthorized() then return end
+            AddCoins(target, 10)
+            Broadcast("SET|"..target.."|"..SecretSpiderCoinDB.balances[target])
+        end,
+
+        OnCancel = function()
+            if not IsAuthorized() then return end
+            AddCoins(target, -10)
+            Broadcast("SET|"..target.."|"..SecretSpiderCoinDB.balances[target])
+        end,
+
+        OnAlt = function()
+            AnnounceBalance(target, "GUILD")
+        end
+    }
+
+    StaticPopup_Show("SSC_PLAYER_MENU")
+end)
+
+-- ==============================
 -- Slash Commands
--- =====================================
+-- ==============================
 
-SLASH_SECRETSPIDERCOIN1 = "/ssc"
-SlashCmdList["SECRETSPIDERCOIN"] = function(msg)
-    local args = {}
-    for word in string.gfind(msg, "%S+") do
-        table.insert(args, word)
+SLASH_SECRETSPIDER1 = "/ssc"
+SlashCmdList["SECRETSPIDER"] = function(msg)
+    if msg == "top" then
+        AnnounceTop10("GUILD")
+    elseif msg == "top raid" then
+        AnnounceTop10("RAID")
+    elseif msg == "top party" then
+        AnnounceTop10("PARTY")
     end
-
-    local cmd = args[1]
-
-    -- Open menu
-    if cmd == "menu" or cmd == nil then
-        StaticPopup_Show("SECRETSPIDER_COIN_MENU")
-        return
-    end
-
-    -- Give coins
-    if cmd == "give" then
-        if not IsDistributor() then
-            print("|cffff0000You are not authorized to give Secret Spider Coins.|r")
-            return
-        end
-
-        local target = args[2]
-        local amount = tonumber(args[3])
-
-        if not target or not amount or amount <= 0 then
-            print("Usage: /ssc give <player> <amount>")
-            return
-        end
-
-        AddCoins(target, amount)
-        print("|cff00ff00Gave|r", amount, "Secret Spider Coins to", target)
-        return
-    end
-
-    -- Check balance
-    if cmd == "balance" then
-        local target = args[2] or PlayerName()
-        print(target .. " has " .. GetBalance(target) .. " Secret Spider Coins")
-        return
-    end
-
-    -- Authorize distributor
-    if cmd == "authorize" then
-        if not IsGuildMaster() then
-            print("|cffff0000Only the Guild Master can authorize distributors.|r")
-            return
-        end
-
-        local target = args[2]
-        if not target then
-            print("Usage: /ssc authorize <player>")
-            return
-        end
-
-        SecretSpiderCoinDB.distributors[target] = true
-        print(target .. " is now authorized to give Secret Spider Coins")
-        return
-    end
-
-    -- Revoke distributor
-    if cmd == "revoke" then
-        if not IsGuildMaster() then
-            print("|cffff0000Only the Guild Master can revoke distributors.|r")
-            return
-        end
-
-        local target = args[2]
-        SecretSpiderCoinDB.distributors[target] = nil
-        print(target .. " is no longer authorized")
-        return
-    end
-
-    -- Help
-    print("|cff00ff00Secret Spider Coin Commands:|r")
-    print("/ssc menu")
-    print("/ssc give <player> <amount>")
-    print("/ssc balance [player]")
-    print("/ssc authorize <player>")
-    print("/ssc revoke <player>")
 end
 
--- =====================================
--- Load Event
--- =====================================
+-- ==============================
+-- Event Handler
+-- ==============================
 
-local frame = CreateFrame("Frame")
-frame:RegisterEvent("ADDON_LOADED")
-frame:SetScript("OnEvent", function()
-    print("|cff00ff00Secret Spider Coin loaded for Turtle WoW.|r")
+local f = CreateFrame("Frame")
+f:RegisterEvent("ADDON_LOADED")
+f:RegisterEvent("CHAT_MSG_ADDON")
+
+f:SetScript("OnEvent", function(_, event, arg1, arg2)
+    if event == "ADDON_LOADED" and arg1 == "SecretSpiderCoin" then
+        InitializeGuildMaster()
+        RegisterAddonMessagePrefix(SECRETSPIDER_PREFIX)
+        print("|cff00ff00Secret Spider Coin loaded.|r")
+    end
+
+    if event == "CHAT_MSG_ADDON" and arg1 == SECRETSPIDER_PREFIX then
+        local cmd, name, amount = strsplit("|", arg2)
+        if cmd == "SET" then
+            SetCoins(name, tonumber(amount))
+        end
+    end
 end)
