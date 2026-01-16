@@ -29,7 +29,7 @@ end
 -----------------------------------
 local frame = CreateFrame("Frame", "SecretSpiderCoinFrame", UIParent)
 frame:SetWidth(420)
-frame:SetHeight(300)
+frame:SetHeight(350)
 frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 frame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -59,9 +59,17 @@ local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 close:SetPoint("TOPRIGHT", -5, -5)
 
 -----------------------------------
--- Player Dropdown
+-- Player Selection (Simple Text + Buttons)
 -----------------------------------
 local selectedPlayer = nil
+
+local playerLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+playerLabel:SetPoint("TOPLEFT", 20, -50)
+playerLabel:SetText("Player:")
+
+local playerText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+playerText:SetPoint("LEFT", playerLabel, "RIGHT", 10, 0)
+playerText:SetText("None Selected")
 
 local function GetPlayerList()
     local list = {}
@@ -99,35 +107,71 @@ local function GetPlayerList()
     return list
 end
 
--- Create dropdown the proper vanilla way
-local dropdown = CreateFrame("Frame", "SSC_PlayerDropdown", frame)
-dropdown:SetPoint("TOPLEFT", 20, -50)
+local playerListFrame = CreateFrame("Frame", "SSC_PlayerList", frame)
+playerListFrame:SetWidth(200)
+playerListFrame:SetHeight(150)
+playerListFrame:SetPoint("TOPLEFT", 20, -80)
+playerListFrame:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 16, edgeSize = 16,
+    insets = { left = 4, right = 4, top = 4, bottom = 4 }
+})
+playerListFrame:Hide()
 
-UIDropDownMenu_Initialize(dropdown, function(self, level)
-    local players = GetPlayerList()
-    for i = 1, table.getn(players) do
-        local info = {}
-        info.text = players[i]
-        info.value = players[i]
-        info.func = function()
-            selectedPlayer = this.value
-            UIDropDownMenu_SetSelectedValue(dropdown, this.value)
+local playerButtons = {}
+for i = 1, 10 do
+    local btn = CreateFrame("Button", "SSC_PlayerBtn"..i, playerListFrame)
+    btn:SetWidth(180)
+    btn:SetHeight(20)
+    btn:SetPoint("TOPLEFT", 10, -10 - (i-1)*20)
+    btn:SetNormalFontObject("GameFontHighlight")
+    btn:SetText("")
+    btn:Hide()
+    
+    btn:SetScript("OnClick", function()
+        selectedPlayer = this:GetText()
+        playerText:SetText(selectedPlayer)
+        playerListFrame:Hide()
+    end)
+    
+    playerButtons[i] = btn
+end
+
+local selectPlayerBtn = CreateFrame("Button", "SSC_SelectPlayer", frame, "UIPanelButtonTemplate")
+selectPlayerBtn:SetWidth(100)
+selectPlayerBtn:SetHeight(22)
+selectPlayerBtn:SetPoint("LEFT", playerText, "RIGHT", 10, 0)
+selectPlayerBtn:SetText("Select")
+
+selectPlayerBtn:SetScript("OnClick", function()
+    if playerListFrame:IsShown() then
+        playerListFrame:Hide()
+    else
+        local players = GetPlayerList()
+        for i = 1, 10 do
+            if i <= table.getn(players) then
+                playerButtons[i]:SetText(players[i])
+                playerButtons[i]:Show()
+            else
+                playerButtons[i]:Hide()
+            end
         end
-        UIDropDownMenu_AddButton(info, level)
+        playerListFrame:Show()
     end
 end)
-
-UIDropDownMenu_SetSelectedValue(dropdown, nil)
-UIDropDownMenu_SetWidth(160, dropdown)
-UIDropDownMenu_SetText(dropdown, "Select Player")
 
 -----------------------------------
 -- Amount Box
 -----------------------------------
+local amountLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+amountLabel:SetPoint("TOPLEFT", 20, -240)
+amountLabel:SetText("Amount:")
+
 local amountBox = CreateFrame("EditBox", "SSC_AmountBox", frame, "InputBoxTemplate")
 amountBox:SetWidth(60)
 amountBox:SetHeight(20)
-amountBox:SetPoint("LEFT", dropdown, "RIGHT", 20, 2)
+amountBox:SetPoint("LEFT", amountLabel, "RIGHT", 10, 0)
 amountBox:SetAutoFocus(false)
 amountBox:SetNumeric(true)
 amountBox:SetText("1")
@@ -136,7 +180,7 @@ amountBox:SetText("1")
 -- Status Text
 -----------------------------------
 local statusText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-statusText:SetPoint("TOPLEFT", dropdown, "BOTTOMLEFT", 20, -20)
+statusText:SetPoint("TOPLEFT", 20, -270)
 statusText:SetText("")
 
 -----------------------------------
@@ -145,7 +189,7 @@ statusText:SetText("")
 local addBtn = CreateFrame("Button", "SSC_AddBtn", frame, "UIPanelButtonTemplate")
 addBtn:SetWidth(80)
 addBtn:SetHeight(22)
-addBtn:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -10)
+addBtn:SetPoint("TOPLEFT", 20, -290)
 addBtn:SetText("Add")
 
 addBtn:SetScript("OnClick", function()
@@ -153,6 +197,8 @@ addBtn:SetScript("OnClick", function()
         local amt = tonumber(amountBox:GetText()) or 0
         AddCoins(selectedPlayer, amt)
         statusText:SetText(selectedPlayer.." has "..GetCoins(selectedPlayer).." (+ "..amt..")")
+    else
+        statusText:SetText("Please select a player first")
     end
 end)
 
@@ -167,34 +213,41 @@ removeBtn:SetScript("OnClick", function()
         local amt = tonumber(amountBox:GetText()) or 0
         RemoveCoins(selectedPlayer, amt)
         statusText:SetText(selectedPlayer.." has "..GetCoins(selectedPlayer).." (- "..amt..")")
+    else
+        statusText:SetText("Please select a player first")
     end
 end)
 
 -----------------------------------
--- Chat Dropdown
+-- Chat Target Selection
 -----------------------------------
 local chatTarget = "GUILD"
 
-local chatDrop = CreateFrame("Frame", "SSC_ChatDropdown", frame)
-chatDrop:SetPoint("TOPLEFT", addBtn, "BOTTOMLEFT", -15, -20)
+local chatLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+chatLabel:SetPoint("LEFT", removeBtn, "RIGHT", 20, 0)
+chatLabel:SetText("Chat:")
 
-UIDropDownMenu_Initialize(chatDrop, function(self, level)
-    local channels = { "GUILD", "PARTY", "RAID" }
-    for i = 1, table.getn(channels) do
-        local info = {}
-        info.text = channels[i]
-        info.value = channels[i]
-        info.func = function()
-            chatTarget = this.value
-            UIDropDownMenu_SetSelectedValue(chatDrop, this.value)
-        end
-        UIDropDownMenu_AddButton(info, level)
+local chatText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+chatText:SetPoint("LEFT", chatLabel, "RIGHT", 5, 0)
+chatText:SetText("GUILD")
+
+local chatBtn = CreateFrame("Button", "SSC_ChatBtn", frame, "UIPanelButtonTemplate")
+chatBtn:SetWidth(70)
+chatBtn:SetHeight(22)
+chatBtn:SetPoint("LEFT", chatText, "RIGHT", 5, 0)
+chatBtn:SetText("Change")
+
+local chatIndex = 1
+local chatChannels = { "GUILD", "PARTY", "RAID" }
+
+chatBtn:SetScript("OnClick", function()
+    chatIndex = chatIndex + 1
+    if chatIndex > table.getn(chatChannels) then
+        chatIndex = 1
     end
+    chatTarget = chatChannels[chatIndex]
+    chatText:SetText(chatTarget)
 end)
-
-UIDropDownMenu_SetSelectedValue(chatDrop, "GUILD")
-UIDropDownMenu_SetWidth(100, chatDrop)
-UIDropDownMenu_SetText(chatDrop, "GUILD")
 
 -----------------------------------
 -- Top 10 Button
@@ -202,7 +255,7 @@ UIDropDownMenu_SetText(chatDrop, "GUILD")
 local topBtn = CreateFrame("Button", "SSC_TopBtn", frame, "UIPanelButtonTemplate")
 topBtn:SetWidth(120)
 topBtn:SetHeight(22)
-topBtn:SetPoint("LEFT", chatDrop, "RIGHT", 10, 2)
+topBtn:SetPoint("TOP", 0, -320)
 topBtn:SetText("Say Top 10")
 
 topBtn:SetScript("OnClick", function()
