@@ -165,20 +165,20 @@ UIDropDownMenu_SetText(chatDrop, "Chat")
 -----------------------------------
 -- Top 10 Button
 -----------------------------------
-local topBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-topBtn:SetSize(120, 22)
-topBtn:SetPoint("LEFT", chatDrop, "RIGHT", 10, 0)
-topBtn:SetText("Say Top 10")
-
 topBtn:SetScript("OnClick", function()
     local list = {}
     for name, coins in pairs(SecretSpiderCoin.coins) do
         table.insert(list, {name=name, coins=coins})
     end
+
     table.sort(list, function(a,b) return a.coins > b.coins end)
 
     SendChatMessage("Top Secret Spider Coin Holders:", chatTarget)
-    for i = 1, min(10, #list) do
+
+    local maxEntries = 10
+    if getn(list) < 10 then maxEntries = getn(list) end
+
+    for i = 1, maxEntries do
         SendChatMessage(i..". "..list[i].name.." - "..list[i].coins, chatTarget)
     end
 end)
