@@ -63,28 +63,31 @@ close:SetPoint("TOPRIGHT", -5, -5)
 -----------------------------------
 local selectedPlayer = nil
 
-local dropdown = CreateFrame("Button", "SSC_PlayerDropdown", frame)
+-- Create dropdown frame properly for vanilla
+local dropdown = CreateFrame("Frame", "SSC_PlayerDropdown", frame)
 dropdown:SetPoint("TOPLEFT", 20, -50)
+dropdown:SetWidth(200)
+dropdown:SetHeight(32)
 
 local function GetPlayerList()
     local list = {}
 
     if GetNumRaidMembers() > 0 then
         for i = 1, GetNumRaidMembers() do
-            local name = (GetRaidRosterInfo(i))
+            local name = GetRaidRosterInfo(i)
             if name then
                 table.insert(list, name)
             end
         end
 
     elseif GetNumPartyMembers() > 0 then
-        local pname = (UnitName("player"))
+        local pname = UnitName("player")
         if pname then
             table.insert(list, pname)
         end
 
         for i = 1, GetNumPartyMembers() do
-            local member = (UnitName("party"..i))
+            local member = UnitName("party"..i)
             if member then
                 table.insert(list, member)
             end
@@ -92,7 +95,7 @@ local function GetPlayerList()
 
     elseif IsInGuild() then
         for i = 1, GetNumGuildMembers() do
-            local gname = (GetGuildRosterInfo(i))
+            local gname = GetGuildRosterInfo(i)
             if gname then
                 table.insert(list, gname)
             end
@@ -102,29 +105,33 @@ local function GetPlayerList()
     return list
 end
 
+-- Initialize dropdown with proper vanilla syntax
 UIDropDownMenu_Initialize(dropdown, function()
     local players = GetPlayerList()
     for i = 1, table.getn(players) do
-        local info = {}
+        local info = UIDropDownMenu_CreateInfo()
         info.text = players[i]
         info.func = function()
-            selectedPlayer = players[i]
-            UIDropDownMenu_SetSelectedName(dropdown, players[i])
+            selectedPlayer = this.value
+            UIDropDownMenu_SetSelectedValue(dropdown, this.value)
         end
+        info.value = players[i]
         UIDropDownMenu_AddButton(info)
     end
 end)
 
 UIDropDownMenu_SetWidth(160, dropdown)
+UIDropDownMenu_SetButtonWidth(160, dropdown)
 UIDropDownMenu_SetText("Select Player", dropdown)
+UIDropDownMenu_JustifyText("LEFT", dropdown)
 
 -----------------------------------
 -- Amount Box
 -----------------------------------
-local amountBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+local amountBox = CreateFrame("EditBox", "SSC_AmountBox", frame, "InputBoxTemplate")
 amountBox:SetWidth(60)
 amountBox:SetHeight(20)
-amountBox:SetPoint("LEFT", dropdown, "RIGHT", 20, 0)
+amountBox:SetPoint("LEFT", dropdown, "RIGHT", 20, 2)
 amountBox:SetAutoFocus(false)
 amountBox:SetNumeric(true)
 amountBox:SetText("1")
@@ -139,7 +146,7 @@ statusText:SetText("")
 -----------------------------------
 -- Add / Remove Buttons
 -----------------------------------
-local addBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+local addBtn = CreateFrame("Button", "SSC_AddBtn", frame, "UIPanelButtonTemplate")
 addBtn:SetWidth(80)
 addBtn:SetHeight(22)
 addBtn:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -10)
@@ -153,7 +160,7 @@ addBtn:SetScript("OnClick", function()
     end
 end)
 
-local removeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+local removeBtn = CreateFrame("Button", "SSC_RemoveBtn", frame, "UIPanelButtonTemplate")
 removeBtn:SetWidth(80)
 removeBtn:SetHeight(22)
 removeBtn:SetPoint("LEFT", addBtn, "RIGHT", 10, 0)
@@ -172,32 +179,37 @@ end)
 -----------------------------------
 local chatTarget = "GUILD"
 
-local chatDrop = CreateFrame("Button", "SSC_ChatDropdown", frame)
+local chatDrop = CreateFrame("Frame", "SSC_ChatDropdown", frame)
 chatDrop:SetPoint("TOPLEFT", addBtn, "BOTTOMLEFT", -15, -20)
+chatDrop:SetWidth(150)
+chatDrop:SetHeight(32)
 
 UIDropDownMenu_Initialize(chatDrop, function()
     local channels = { "GUILD", "PARTY", "RAID" }
     for i = 1, table.getn(channels) do
-        local info = {}
+        local info = UIDropDownMenu_CreateInfo()
         info.text = channels[i]
         info.func = function()
-            chatTarget = channels[i]
-            UIDropDownMenu_SetSelectedName(chatDrop, channels[i])
+            chatTarget = this.value
+            UIDropDownMenu_SetSelectedValue(chatDrop, this.value)
         end
+        info.value = channels[i]
         UIDropDownMenu_AddButton(info)
     end
 end)
 
 UIDropDownMenu_SetWidth(100, chatDrop)
-UIDropDownMenu_SetText("Chat", chatDrop)
+UIDropDownMenu_SetButtonWidth(100, chatDrop)
+UIDropDownMenu_SetText("GUILD", chatDrop)
+UIDropDownMenu_SetSelectedValue(chatDrop, "GUILD")
 
 -----------------------------------
 -- Top 10 Button
 -----------------------------------
-local topBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+local topBtn = CreateFrame("Button", "SSC_TopBtn", frame, "UIPanelButtonTemplate")
 topBtn:SetWidth(120)
 topBtn:SetHeight(22)
-topBtn:SetPoint("LEFT", chatDrop, "RIGHT", 10, 0)
+topBtn:SetPoint("LEFT", chatDrop, "RIGHT", 10, 2)
 topBtn:SetText("Say Top 10")
 
 topBtn:SetScript("OnClick", function()
@@ -224,7 +236,7 @@ end)
 local mini = CreateFrame("Button", "SSC_MinimapButton", Minimap)
 mini:SetWidth(32)
 mini:SetHeight(32)
-mini:SetPoint("TOPLEFT", Minimap, "TOPLEFT")
+mini:SetPoint("TOPLEFT", Minimap, "TOPLEFT", -10, 10)
 mini:SetNormalTexture("Interface\\Icons\\INV_Misc_Coin_01")
 mini:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 
