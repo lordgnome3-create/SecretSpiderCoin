@@ -71,32 +71,37 @@ local function GetPlayerList()
 
     if GetNumRaidMembers() > 0 then
         for i = 1, GetNumRaidMembers() do
-            local name = GetRaidRosterInfo(i)
+            local name = (GetRaidRosterInfo(i))
             if name then
                 table.insert(list, name)
             end
         end
 
     elseif GetNumPartyMembers() > 0 then
-        table.insert(list, UnitName("player"))
+        local pname = (UnitName("player"))
+        if pname then
+            table.insert(list, pname)
+        end
+
         for i = 1, GetNumPartyMembers() do
-            local name = UnitName("party"..i)
-            if name then
-                table.insert(list, name)
+            local member = (UnitName("party"..i))
+            if member then
+                table.insert(list, member)
             end
         end
 
     elseif IsInGuild() then
         for i = 1, GetNumGuildMembers() do
-            local name = GetGuildRosterInfo(i)
-            if name then
-                table.insert(list, name)
+            local gname = (GetGuildRosterInfo(i))
+            if gname then
+                table.insert(list, gname)
             end
         end
     end
 
     return list
 end
+
 
 
 
