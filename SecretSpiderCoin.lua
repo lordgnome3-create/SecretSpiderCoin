@@ -129,51 +129,137 @@ local function GetGroupMembers()
 end
 
 -- ======================
--- Main Window
+-- Main Window (FIXED)
 -- ======================
 
-local SSC_Frame = CreateFrame("Frame","SSC_MainFrame",UIParent)
-SSC_Frame:SetWidth(300)
-SSC_Frame:SetHeight(200)
+local SSC_Frame = CreateFrame("Frame", "SSC_MainFrame", UIParent)
+SSC_Frame:SetWidth(320)
+SSC_Frame:SetHeight(220)
 SSC_Frame:SetPoint("CENTER")
 SSC_Frame:SetBackdrop({
-    bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
-    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
-    tile=true, tileSize=32, edgeSize=32,
-    insets={left=11,right=12,top=12,bottom=11}
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 32,
+    insets = { left = 11, right = 12, top = 12, bottom = 11 }
 })
-SSC_Frame:Hide()
 SSC_Frame:SetMovable(true)
 SSC_Frame:EnableMouse(true)
 SSC_Frame:RegisterForDrag("LeftButton")
-SSC_Frame:SetScript("OnDragStart", function() this:StartMoving() end)
-SSC_Frame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+SSC_Frame:SetScript("OnDragStart", function() SSC_Frame:StartMoving() end)
+SSC_Frame:SetScript("OnDragStop", function() SSC_Frame:StopMovingOrSizing() end)
+SSC_Frame:Hide()
 
-SSC_Frame.title = SSC_Frame:CreateFontString(nil,"OVERLAY","GameFontNormal")
-SSC_Frame.title:SetPoint("TOP",0,-15)
-SSC_Frame.title:SetText("Secret Spider Coin")
+-- Title
+local title = SSC_Frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+title:SetPoint("TOP", 0, -15)
+title:SetText("Secret Spider Coin")
 
--- Dropdown
-SSC_Frame.selected = Player()
+-- ======================
+-- Dropdown (FIXED)
+-- ======================
 
-SSC_Frame.drop = CreateFrame("Frame","SSC_Dropdown",SSC_Frame,"UIDropDownMenuTemplate")
-SSC_Frame.drop:SetPoint("TOP",-10,-40)
+SSC_Frame.selected = UnitName("player")
 
-local function DropInit()
-    local info = {}
-    for _,name in ipairs(GetGroupMembers()) do
-        info.text = name
-        info.func = function()
-            SSC_Frame.selected = name
-            UIDropDownMenu_SetText(name, SSC_Frame.drop)
+local dropdown = CreateFrame("Frame", "SSC_Dropdown", SSC_Frame, "UIDropDownMenuTemplate")
+dropdown:SetPoint("TOP", 0, -45)
+
+local function RefreshDropdown()
+    UIDropDownMenu_Initialize(dropdown, function()
+        local info = {}
+        local members = {}
+
+        if GetNumRaidMembers() > 0 then
+            for i = 1, GetNumRaidMembers() do
+                table.insert(members, UnitName("raid" .. i))
+            end
+        elseif GetNumPartyMembers() > 0 then
+            table.insert(members, UnitName("player"))
+            for i = 1, GetNumPartyMembers() do
+                table.insert(members, UnitName("party" .. i))
+            end
+        else
+            table.insert(members, UnitName("player"))
         end
-        UIDropDownMenu_AddButton(info)
+
+        for _, name in ipairs(members) do
+            info.text = name
+            info.func = function()
+                SSC_Frame.selected = name
+                UIDropDownMenu_SetText(name, dropdown)
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    UIDropDownMenu_SetWidth(160, dropdown)
+    UIDropDownMenu_SetText(SSC_Frame.selected, dropdown)
+end
+
+-- ======================
+-- Amount Box
+-- ======================
+
+local amountBox = CreateFrame("EditBox", nil, SSC_Frame, "InputBoxTemplate")
+amountBox:SetPoint("TOP", 0, -85)
+amountBox:SetWidth(80)
+amountBox:SetHeight(20)
+amountBox:SetAutoFocus(false)
+
+local amountLabel = SSC_Frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+amountLabel:SetPoint("BOTTOM", amountBox, "TOP", 0, 5)
+amountLabel:SetText("Amount")
+
+-- ======================
+-- Buttons
+-- ======================
+
+local function MakeButton(text, x, y, handler)
+    local b = CreateFrame("Button", nil, SSC_Frame, "UIPanelButtonTemplate")
+    b:SetText(text)
+    b:SetWidth(110)
+    b:SetHeight(24)
+    b:SetPoint("TOP", x, y)
+    b:SetScript("OnClick", handler)
+    return b
+end
+
+MakeButton("Add Coins", -70, -130, function()
+    if not IsAuthorized() then return end
+    local amt = tonumber(amountBox:GetText())
+    if amt then AddCoins(SSC_Frame.selected, amt) end
+end)
+
+MakeButton("Remove Coins", 70, -130, function()
+    if not IsAuthorized() then return end
+    local amt = tonumber(amountBox:GetText())
+    if amt then AddCoins(SSC_Frame.selected, -amt) end
+end)
+
+MakeButton("Announce (Guild)", -70, -165, function()
+    AnnounceBalance(SSC_Frame.selected, "GUILD")
+end)
+
+MakeButton("Top 10 (Guild)", 70, -165, function()
+    AnnounceTop10("GUILD")
+end)
+
+-- ======================
+-- Slash Command (FIXED)
+-- ======================
+
+SLASH_SSC1 = "/ssc"
+SlashCmdList["SSC"] = function(msg)
+    if msg == "show" then
+        if SSC_Frame:IsShown() then
+            SSC_Frame:Hide()
+        else
+            RefreshDropdown()
+            SSC_Frame:Show()
+        end
+    elseif msg == "history" then
+        for _, v in ipairs(SecretSpiderCoinDB.history) do
+            print(v)
+        end
     end
 end
 
-UIDropDownMenu_Initialize(SSC_Frame.drop, DropInit)
-UIDropDownMenu_SetWidth(150, SSC_Frame.drop)
-UIDropDownMenu_SetText(Player(), SSC_Frame.drop)
-
--- Amount box
-SSC_Frame.amount = CreateFrame("EditBox",nil,SSC_Frame,"InputBoxTemplate")
