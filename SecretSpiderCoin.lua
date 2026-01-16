@@ -1,5 +1,5 @@
 -- ==================================================
--- Secret Spider Coin v6.9 (Turtle WoW / Vanilla)
+-- Secret Spider Coin v7.0 (Turtle WoW / Vanilla)
 -- ==================================================
 
 SSC_PREFIX = "SSC"
@@ -93,7 +93,7 @@ end
 local function AnnounceTop10(channel)
     local list = {}
     for n, a in pairs(SecretSpiderCoinDB.balances) do
-        table.insert(list, {n=n, a=a})  -- safe insert
+        table.insert(list, {n=n, a=a})
     end
     table.sort(list, function(x, y) return x.a > y.a end)
 
@@ -104,7 +104,7 @@ local function AnnounceTop10(channel)
 end
 
 -- ======================
--- Group Member List (nil-safe)
+-- Group Member List
 -- ======================
 
 local function GetGroupMembers()
@@ -113,20 +113,16 @@ local function GetGroupMembers()
     if GetNumRaidMembers() > 0 then
         for i = 1, GetNumRaidMembers() do
             local name = UnitName("raid"..i)
-            if name then
-                table.insert(members, name)  -- safe
-            end
+            if name then table.insert(members, name) end
         end
     elseif GetNumPartyMembers() > 0 then
-        table.insert(members, Player())  -- safe
+        table.insert(members, Player())
         for i = 1, GetNumPartyMembers() do
             local name = UnitName("party"..i)
-            if name then
-                table.insert(members, name)  -- safe
-            end
+            if name then table.insert(members, name) end
         end
     else
-        table.insert(members, Player())  -- safe
+        table.insert(members, Player())
     end
 
     return members
@@ -178,7 +174,7 @@ selectedBox:SetPoint("LEFT", dropdown, "RIGHT", 20, 0)
 selectedBox:SetText("Selected: "..SSC_Frame.selected)
 
 local function RefreshDropdown()
-    UIDropDownMenu_Initialize(dropdown, function()
+    UIDropDownMenu_Initialize(dropdown, function(self, level, menuList)
         local members = GetGroupMembers()
         for index, name in ipairs(members) do
             local info = {}
@@ -186,8 +182,8 @@ local function RefreshDropdown()
             info.value = name
             info.func = function()
                 SSC_Frame.selected = name
-                UIDropDownMenu_SetText(name, dropdown)
                 UIDropDownMenu_SetSelectedID(dropdown, index)
+                UIDropDownMenu_SetText(name, dropdown)
                 selectedBox:SetText("Selected: "..name)
             end
             UIDropDownMenu_AddButton(info)
@@ -223,7 +219,7 @@ SSC_Frame.channel = "GUILD"
 
 local function RefreshChannelDropdown()
     local channels = {"GUILD","PARTY","RAID","SAY"}
-    UIDropDownMenu_Initialize(channelDropdown, function()
+    UIDropDownMenu_Initialize(channelDropdown, function(self, level, menuList)
         for i, ch in ipairs(channels) do
             local info = {}
             info.text = ch
@@ -280,9 +276,9 @@ SLASH_SSC1 = "/ssc"
 SlashCmdList["SSC"] = function(msg)
     msg = string.lower(msg)
     if msg == "show" then
-        RefreshDropdown()
-        RefreshChannelDropdown()
-        SSC_Frame:Show()
+        SSC_Frame:Show()                -- show frame first
+        RefreshDropdown()               -- then populate dropdown
+        RefreshChannelDropdown()        -- populate channels
     elseif msg == "close" then
         SSC_Frame:Hide()
     elseif msg == "history" then
