@@ -214,14 +214,12 @@ local function OpenSSCFrame()
     SSC_Frame:Show()
 end
 
--- ======================
 -- Events
--- ======================
 local f=CreateFrame("Frame")
-f:RegisterEvent("PLAYER_LOGIN")
+f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("CHAT_MSG_ADDON")
 f:SetScript("OnEvent", function(_,event,arg1,arg2)
-    if event=="PLAYER_LOGIN" then
+    if event=="ADDON_LOADED" and arg1=="SecretSpiderCoin" then
         InitGuildMaster()
         RegisterAddonMessagePrefix(SSC_PREFIX)
         CreateSSCFrame()
@@ -239,19 +237,11 @@ f:SetScript("OnEvent", function(_,event,arg1,arg2)
             end
         end
 
-        -- Minimap icon
-        local LDBIcon = CreateFrame("Button", "SSC_MinimapButton", Minimap)
-        LDBIcon:SetSize(25,25)
-        LDBIcon:SetPoint("TOPLEFT", Minimap, "TOPLEFT")
-        LDBIcon:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-        local iconTexture = LDBIcon:CreateTexture(nil,"BACKGROUND")
-        iconTexture:SetAllPoints()
-        iconTexture:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
-        LDBIcon:SetScript("OnClick", function() OpenSSCFrame() end)
-        LDBIcon:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-            GameTooltip:SetText("Secret Spider Coin")
-            GameTooltip:AddLine("Click to open menu")
-            GameTooltip:Show()
-        end)
-        LDBIcon:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        print("|cff00ff00Secret Spider Coin loaded. Use /ssc show|r")
+    end
+
+    if event=="CHAT_MSG_ADDON" and arg1==SSC_PREFIX then
+        local cmd,name,amt=strsplit("|",arg2)
+        if cmd=="SET" then SecretSpiderCoinDB.balances[name]=tonumber(amt) end
+    end
+end)
