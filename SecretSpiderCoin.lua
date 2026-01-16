@@ -182,7 +182,7 @@ end)
 -- Amount Box
 -----------------------------------
 local amountLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-amountLabel:SetPoint("TOPLEFT", 20, -240)
+amountLabel:SetPoint("TOPLEFT", 20, -410)
 amountLabel:SetText("Amount:")
 
 local amountBox = CreateFrame("EditBox", "SSC_AmountBox", frame, "InputBoxTemplate")
@@ -251,7 +251,7 @@ UpdateTop15()
 -- Status Text
 -----------------------------------
 local statusText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-statusText:SetPoint("TOPLEFT", 20, -270)
+statusText:SetPoint("TOPLEFT", 20, -440)
 statusText:SetText("")
 
 -----------------------------------
@@ -260,7 +260,7 @@ statusText:SetText("")
 local addBtn = CreateFrame("Button", "SSC_AddBtn", frame, "UIPanelButtonTemplate")
 addBtn:SetWidth(80)
 addBtn:SetHeight(22)
-addBtn:SetPoint("TOPLEFT", 20, -290)
+addBtn:SetPoint("TOPLEFT", 20, -460)
 addBtn:SetText("Add")
 
 addBtn:SetScript("OnClick", function()
