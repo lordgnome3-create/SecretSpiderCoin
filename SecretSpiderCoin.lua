@@ -3,6 +3,7 @@
 -----------------------------------
 SecretSpiderCoin = {}
 SecretSpiderCoin.coins = {}
+SecretSpiderCoin.lastWhisper = nil
 
 -----------------------------------
 -- Saved Variables
@@ -471,35 +472,13 @@ topBtn:SetScript("OnClick", function()
     if table.getn(list) < 10 then maxEntries = table.getn(list) end
 
     if chatTarget == "WHISPER" then
-        -- Get last whisper target
-        local whisperTarget = nil
-        for i = 1, 10 do
-            local name, language = GetChatWindowMessages(i)
-            if name and name ~= "" then
-                whisperTarget = name
-                break
-            end
-        end
-        
-        -- If no whisper target found, try to get from chat history
-        if not whisperTarget then
-            -- Check the last tell sent
-            for i = NUM_CHAT_WINDOWS, 1, -1 do
-                local frame = getglobal("ChatFrame"..i)
-                if frame then
-                    whisperTarget = frame.whisperTarget
-                    if whisperTarget then break end
-                end
-            end
-        end
-        
-        if whisperTarget then
-            SendChatMessage("Top Secret Spider Coin Holders:", "WHISPER", nil, whisperTarget)
+        if SecretSpiderCoin.lastWhisper and SecretSpiderCoin.lastWhisper ~= "" then
+            SendChatMessage("Top Secret Spider Coin Holders:", "WHISPER", nil, SecretSpiderCoin.lastWhisper)
             for i = 1, maxEntries do
-                SendChatMessage(i..". "..list[i].name.." - "..list[i].coins, "WHISPER", nil, whisperTarget)
+                SendChatMessage(i..". "..list[i].name.." - "..list[i].coins, "WHISPER", nil, SecretSpiderCoin.lastWhisper)
             end
         else
-            statusText:SetText("No recent whisper target found")
+            statusText:SetText("No whisper target set. Type a name in chat.")
         end
     else
         SendChatMessage("Top Secret Spider Coin Holders:", chatTarget)
@@ -545,11 +524,19 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGOUT")
 eventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
 eventFrame:RegisterEvent("PLAYER_QUITING")
+eventFrame:RegisterEvent("CHAT_MSG_WHISPER")
+eventFrame:RegisterEvent("CHAT_MSG_WHISPER_INFORM")
 eventFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "SecretSpiderCoin" then
         LoadData()
         UpdateTop15()
     elseif event == "PLAYER_LOGOUT" or event == "PLAYER_LEAVING_WORLD" or event == "PLAYER_QUITING" then
         SaveData()
+    elseif event == "CHAT_MSG_WHISPER" then
+        -- Incoming whisper
+        SecretSpiderCoin.lastWhisper = arg2
+    elseif event == "CHAT_MSG_WHISPER_INFORM" then
+        -- Outgoing whisper
+        SecretSpiderCoin.lastWhisper = arg2
     end
 end)
