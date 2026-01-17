@@ -320,7 +320,7 @@ amountBox:SetText("1")
 -----------------------------------
 local topLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 topLabel:SetPoint("TOPLEFT", 240, -50)
-topLabel:SetText("         Top Holders")
+topLabel:SetText("Top Holders")
 
 local topFrame = CreateFrame("Frame", "SSC_TopFrame", frame)
 topFrame:SetWidth(160)
@@ -491,6 +491,74 @@ chatBtn:SetScript("OnClick", function()
     end
     chatTarget = chatChannels[chatIndex]
     chatText:SetText(chatTarget)
+    DEFAULT_CHAT_FRAME:AddMessage("Chat channel changed to: "..chatTarget)
+end)
+
+-----------------------------------
+-- Add/Announce & Remove/Announce Buttons
+-----------------------------------
+local addAnnounceBtn = CreateFrame("Button", "SSC_AddAnnounceBtn", frame, "UIPanelButtonTemplate")
+addAnnounceBtn:SetWidth(100)
+addAnnounceBtn:SetHeight(22)
+addAnnounceBtn:SetPoint("TOPLEFT", addBtn, "BOTTOMLEFT", 0, -5)
+addAnnounceBtn:SetText("Add/Announce")
+
+addAnnounceBtn:SetScript("OnClick", function()
+    if selectedPlayer then
+        local amt = tonumber(amountBox:GetText()) or 0
+        AddCoins(selectedPlayer, amt)
+        local newTotal = GetCoins(selectedPlayer)
+        statusText:SetText(selectedPlayer.." has "..newTotal.." (+ "..amt..")")
+        UpdateTop15()
+        
+        -- Announce to chat
+        local message = selectedPlayer.." has gained "..amt.." Secret Spider Coin ("..newTotal.." total)"
+        local currentChat = chatText:GetText()
+        
+        if currentChat == "WHISPER" then
+            if SecretSpiderCoin.lastWhisper and SecretSpiderCoin.lastWhisper ~= "" then
+                SendChatMessage(message, "WHISPER", nil, SecretSpiderCoin.lastWhisper)
+            else
+                statusText:SetText("No whisper target set")
+            end
+        else
+            SendChatMessage(message, currentChat)
+        end
+    else
+        statusText:SetText("Please select a player first")
+    end
+end)
+
+local removeAnnounceBtn = CreateFrame("Button", "SSC_RemoveAnnounceBtn", frame, "UIPanelButtonTemplate")
+removeAnnounceBtn:SetWidth(100)
+removeAnnounceBtn:SetHeight(22)
+removeAnnounceBtn:SetPoint("LEFT", addAnnounceBtn, "RIGHT", 10, 0)
+removeAnnounceBtn:SetText("Remove/Announce")
+
+removeAnnounceBtn:SetScript("OnClick", function()
+    if selectedPlayer then
+        local amt = tonumber(amountBox:GetText()) or 0
+        RemoveCoins(selectedPlayer, amt)
+        local newTotal = GetCoins(selectedPlayer)
+        statusText:SetText(selectedPlayer.." has "..newTotal.." (- "..amt..")")
+        UpdateTop15()
+        
+        -- Announce to chat
+        local message = selectedPlayer.." has lost "..amt.." Secret Spider Coin ("..newTotal.." total)"
+        local currentChat = chatText:GetText()
+        
+        if currentChat == "WHISPER" then
+            if SecretSpiderCoin.lastWhisper and SecretSpiderCoin.lastWhisper ~= "" then
+                SendChatMessage(message, "WHISPER", nil, SecretSpiderCoin.lastWhisper)
+            else
+                statusText:SetText("No whisper target set")
+            end
+        else
+            SendChatMessage(message, currentChat)
+        end
+    else
+        statusText:SetText("Please select a player first")
+    end
 end)
 
 -----------------------------------
@@ -499,7 +567,7 @@ end)
 local topBtn = CreateFrame("Button", "SSC_TopBtn", frame, "UIPanelButtonTemplate")
 topBtn:SetWidth(120)
 topBtn:SetHeight(22)
-topBtn:SetPoint("TOP", 0, -520)
+topBtn:SetPoint("TOP", -65, -520)
 topBtn:SetText("Say Top 10")
 
 topBtn:SetScript("OnClick", function()
@@ -538,6 +606,35 @@ topBtn:SetScript("OnClick", function()
 end)
 
 -----------------------------------
+-- Say Player Balance Button
+-----------------------------------
+local balanceBtn = CreateFrame("Button", "SSC_BalanceBtn", frame, "UIPanelButtonTemplate")
+balanceBtn:SetWidth(120)
+balanceBtn:SetHeight(22)
+balanceBtn:SetPoint("TOP", 65, -520)
+balanceBtn:SetText("Say Balance")
+
+balanceBtn:SetScript("OnClick", function()
+    if selectedPlayer then
+        local currentCoins = GetCoins(selectedPlayer)
+        local message = selectedPlayer.." has "..currentCoins.." Secret Spider Coin"
+        local currentChat = chatText:GetText()
+        
+        if currentChat == "WHISPER" then
+            if SecretSpiderCoin.lastWhisper and SecretSpiderCoin.lastWhisper ~= "" then
+                SendChatMessage(message, "WHISPER", nil, SecretSpiderCoin.lastWhisper)
+            else
+                statusText:SetText("No whisper target set")
+            end
+        else
+            SendChatMessage(message, currentChat)
+        end
+    else
+        statusText:SetText("Please select a player first")
+    end
+end)
+
+-----------------------------------
 -- Minimap Button
 -----------------------------------
 local mini = CreateFrame("Button", "SSC_MinimapButton", Minimap)
@@ -553,6 +650,17 @@ mini:SetScript("OnClick", function()
     else
         frame:Show()
     end
+end)
+
+mini:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(this, "ANCHOR_LEFT")
+    GameTooltip:SetText("SecretSpiderCoin", 1, 1, 1)
+    GameTooltip:AddLine("The only accepted coin of the village springdu", nil, nil, nil, 1)
+    GameTooltip:Show()
+end)
+
+mini:SetScript("OnLeave", function()
+    GameTooltip:Hide()
 end)
 
 -----------------------------------
