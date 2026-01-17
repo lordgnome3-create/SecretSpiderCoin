@@ -320,7 +320,7 @@ amountBox:SetText("1")
 -----------------------------------
 local topLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 topLabel:SetPoint("TOPLEFT", 240, -50)
-topLabel:SetText("Top Holders")
+topLabel:SetText("         Top Holders")
 
 local topFrame = CreateFrame("Frame", "SSC_TopFrame", frame)
 topFrame:SetWidth(160)
