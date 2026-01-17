@@ -88,25 +88,60 @@ playerText:SetText("None Selected")
 
 local function GetPlayerList()
     local list = {}
+    
+    -- First, add all players who have coins
+    for name, coins in pairs(SecretSpiderCoin.coins) do
+        if type(coins) == "number" and coins > 0 then
+            table.insert(list, name)
+        end
+    end
 
+    -- Then add players from raid/party/guild
     if GetNumRaidMembers() > 0 then
         for i = 1, GetNumRaidMembers() do
             local name = GetRaidRosterInfo(i)
             if name then
-                table.insert(list, name)
+                local alreadyInList = false
+                for j = 1, table.getn(list) do
+                    if list[j] == name then
+                        alreadyInList = true
+                        break
+                    end
+                end
+                if not alreadyInList then
+                    table.insert(list, name)
+                end
             end
         end
 
     elseif GetNumPartyMembers() > 0 then
         local pname = UnitName("player")
         if pname then
-            table.insert(list, pname)
+            local alreadyInList = false
+            for j = 1, table.getn(list) do
+                if list[j] == pname then
+                    alreadyInList = true
+                    break
+                end
+            end
+            if not alreadyInList then
+                table.insert(list, pname)
+            end
         end
 
         for i = 1, GetNumPartyMembers() do
             local member = UnitName("party"..i)
             if member then
-                table.insert(list, member)
+                local alreadyInList = false
+                for j = 1, table.getn(list) do
+                    if list[j] == member then
+                        alreadyInList = true
+                        break
+                    end
+                end
+                if not alreadyInList then
+                    table.insert(list, member)
+                end
             end
         end
 
@@ -114,10 +149,22 @@ local function GetPlayerList()
         for i = 1, GetNumGuildMembers() do
             local gname = GetGuildRosterInfo(i)
             if gname then
-                table.insert(list, gname)
+                local alreadyInList = false
+                for j = 1, table.getn(list) do
+                    if list[j] == gname then
+                        alreadyInList = true
+                        break
+                    end
+                end
+                if not alreadyInList then
+                    table.insert(list, gname)
+                end
             end
         end
     end
+    
+    -- Sort the list alphabetically
+    table.sort(list)
 
     return list
 end
