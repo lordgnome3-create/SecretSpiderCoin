@@ -96,7 +96,43 @@ local function GetPlayerList()
         end
     end
 
-    -- Then add players from raid/party/guild
+    -- Add friends list
+    for i = 1, GetNumFriends() do
+        local fname = GetFriendInfo(i)
+        if fname then
+            local alreadyInList = false
+            for j = 1, table.getn(list) do
+                if list[j] == fname then
+                    alreadyInList = true
+                    break
+                end
+            end
+            if not alreadyInList then
+                table.insert(list, fname)
+            end
+        end
+    end
+
+    -- Add guild members
+    if IsInGuild() then
+        for i = 1, GetNumGuildMembers() do
+            local gname = GetGuildRosterInfo(i)
+            if gname then
+                local alreadyInList = false
+                for j = 1, table.getn(list) do
+                    if list[j] == gname then
+                        alreadyInList = true
+                        break
+                    end
+                end
+                if not alreadyInList then
+                    table.insert(list, gname)
+                end
+            end
+        end
+    end
+
+    -- Add players from raid
     if GetNumRaidMembers() > 0 then
         for i = 1, GetNumRaidMembers() do
             local name = GetRaidRosterInfo(i)
@@ -115,6 +151,7 @@ local function GetPlayerList()
         end
 
     elseif GetNumPartyMembers() > 0 then
+        -- Add yourself
         local pname = UnitName("player")
         if pname then
             local alreadyInList = false
@@ -129,6 +166,7 @@ local function GetPlayerList()
             end
         end
 
+        -- Add party members
         for i = 1, GetNumPartyMembers() do
             local member = UnitName("party"..i)
             if member then
@@ -141,23 +179,6 @@ local function GetPlayerList()
                 end
                 if not alreadyInList then
                     table.insert(list, member)
-                end
-            end
-        end
-
-    elseif IsInGuild() then
-        for i = 1, GetNumGuildMembers() do
-            local gname = GetGuildRosterInfo(i)
-            if gname then
-                local alreadyInList = false
-                for j = 1, table.getn(list) do
-                    if list[j] == gname then
-                        alreadyInList = true
-                        break
-                    end
-                end
-                if not alreadyInList then
-                    table.insert(list, gname)
                 end
             end
         end
