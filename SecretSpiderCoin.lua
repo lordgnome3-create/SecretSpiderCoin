@@ -682,10 +682,15 @@ eventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
 eventFrame:RegisterEvent("PLAYER_QUITING")
 eventFrame:RegisterEvent("CHAT_MSG_WHISPER")
 eventFrame:RegisterEvent("CHAT_MSG_WHISPER_INFORM")
+eventFrame:RegisterEvent("CHAT_MSG_ADDON")
+
 eventFrame:SetScript("OnEvent", function()
     if event == "ADDON_LOADED" and arg1 == "SecretSpiderCoin" then
         LoadData()
         UpdateTop15()
+        -- Register addon message prefixes
+        RegisterAddonMessagePrefix("SSC_REQUEST")
+        RegisterAddonMessagePrefix("SSC_RESPONSE")
     elseif event == "PLAYER_LOGOUT" or event == "PLAYER_LEAVING_WORLD" or event == "PLAYER_QUITING" then
         SaveData()
     elseif event == "CHAT_MSG_WHISPER" then
@@ -694,5 +699,29 @@ eventFrame:SetScript("OnEvent", function()
     elseif event == "CHAT_MSG_WHISPER_INFORM" then
         -- Outgoing whisper
         SecretSpiderCoin.lastWhisper = arg2
+    elseif event == "CHAT_MSG_ADDON" then
+        -- Handle addon communication
+        local prefix = arg1
+        local message = arg2
+        local channel = arg3
+        local sender = arg4
+        
+        if prefix == "SSC_REQUEST" and message == "GETDATA" then
+            -- Someone is requesting our coin data
+            local response = ""
+            for name, coins in pairs(SecretSpiderCoin.coins) do
+                if type(coins) == "number" then
+                    if response ~= "" then
+                        response = response.."|"
+                    end
+                    response = response..name..":"..coins
+                end
+            end
+            
+            -- Send response back
+            if response ~= "" then
+                SendAddonMessage("SSC_RESPONSE", response, channel)
+            end
+        end
     end
 end)
