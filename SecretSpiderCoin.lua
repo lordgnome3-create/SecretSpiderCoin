@@ -712,7 +712,7 @@ eventFrame:SetScript("OnEvent", function()
             for name, coins in pairs(SecretSpiderCoin.coins) do
                 if type(coins) == "number" then
                     if response ~= "" then
-                        response = response.."|"
+                        response = response..";"
                     end
                     response = response..name..":"..coins
                 end
