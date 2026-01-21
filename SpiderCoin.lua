@@ -733,14 +733,22 @@ eventFrame:SetScript("OnEvent", function()
                 local recipientName = parts[3]
                 local amount = tonumber(parts[4])
                 
-                -- Validate
+                -- Validate amount
                 if not amount or amount <= 0 then
                     SendAddonMessage("SPC_TRANSFER_CONFIRM", "FAILED:Invalid amount", "GUILD")
                     return
                 end
                 
+                -- Initialize coins if they don't exist
+                if not SpiderCoin.coins[senderName] then
+                    SpiderCoin.coins[senderName] = 0
+                end
+                if not SpiderCoin.coins[recipientName] then
+                    SpiderCoin.coins[recipientName] = 0
+                end
+                
                 -- Check if sender has enough coins
-                local senderBalance = GetCoins(senderName)
+                local senderBalance = SpiderCoin.coins[senderName]
                 if senderBalance < amount then
                     SendAddonMessage("SPC_TRANSFER_CONFIRM", "FAILED:"..senderName.." has insufficient funds ("..senderBalance.." available)", "GUILD")
                     return
@@ -754,7 +762,7 @@ eventFrame:SetScript("OnEvent", function()
                 local confirmMsg = "SUCCESS:"..senderName..":"..recipientName..":"..amount
                 SendAddonMessage("SPC_TRANSFER_CONFIRM", confirmMsg, "GUILD")
                 
-                -- Announce in guild chat (optional)
+                -- Announce in guild chat
                 SendChatMessage(senderName.." sent "..amount.." Spider Coin to "..recipientName.." (confirmed)", "GUILD")
                 
                 -- Update display
